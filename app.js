@@ -59,7 +59,6 @@ class App {
 				var lastItem = {};
 
                 result.items.forEach((item) => {
-					this.debug(item);
 					let timestamp = new Date(item.isoDate);
 					let title = item.title;
 					let key = `${item.isoDate}:${title}`;
