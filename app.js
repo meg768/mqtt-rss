@@ -107,7 +107,7 @@ class App {
 	async loop() {
 		this.debug(`Updating...`);
 		await this.update();
-		setTimeout(this.loop.bind(this), 1000 * 15);
+		setTimeout(this.loop.bind(this), 1000 * 60 * 1);
 	}
 
 	async run() {
