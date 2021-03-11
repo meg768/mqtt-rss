@@ -19,7 +19,8 @@ class App {
 		yargs.option('password', {describe:'Password for MQTT broker', default:process.env.MQTT_PASSWORD});
 		yargs.option('username', {describe:'User name for MQTT broker', default:process.env.MQTT_USERNAME});
 		yargs.option('port',     {describe:'Port for MQTT', default:process.env.MQTT_PORT});
-		yargs.option('debug',    {describe:'Debug mode', type:'boolean', default:true});
+		yargs.option('topic',    {describe:'MQTT root topic', default:process.env.MQTT_TOPIC});
+		yargs.option('debug',    {describe:'Debug mode', type:'boolean', default:false});
 
 		yargs.help();
 		yargs.wrap(null);
@@ -60,11 +61,9 @@ class App {
 
                 result.items.forEach((item) => {
 					let timestamp = new Date(item.isoDate);
-					let title = item.title;
-					let key = `${item.isoDate}:${title}`;
 
 					if (lastItem.timestamp == undefined || (lastItem.timestamp.getTime() < timestamp.getTime())) {
-						lastItem = {key:key, timestamp:timestamp, name:this.name, description:this.description, title:title};
+						lastItem = {key:`${item.isoDate}:${item.title}`, timestamp:timestamp, item:item};
 					}
                 });
 
@@ -94,8 +93,18 @@ class App {
 			let result = await this.fetch(feed);
 
 			if (result) {
-				this.publish(`rss/${name}/title`, result.title);
-				this.publish(`rss/${name}/timestamp`, result.timestamp);
+				let title = result.item.title;
+				let link = result.item.link;
+				let content = result.item.contentSnippet;
+				let date = result.item.isoDate;
+
+				if (content == undefined)
+					content = result.item['content:encodedSnippet'];
+
+				this.publish(`${this.argv.topic}/${name}/title`, title);
+				this.publish(`${this.argv.topic}/${name}/link`, link);
+				this.publish(`${this.argv.topic}/${name}/content`, content);
+				this.publish(`${this.argv.topic}/${name}/date`, date);
 	
 			}
 		  }
@@ -120,27 +129,25 @@ class App {
 				this.debug(`Connected to host ${argv.host}:${argv.port}.`);
 			});
 
-			this.mqtt.subscribe(`rss/#`);
+			this.mqtt.subscribe(`${this.argv.topic}/#`);
 
-			this.mqtt.on(`rss/:name/url`, (topic, message, args) => {
+			this.mqtt.on(`${this.argv.topic}/:name`, (topic, message, args) => {
 				try {
 					if (message == '') {
 						this.debug(`Removed topic ${topic}...`);
 						delete this.feeds[args.name];
 					}
 					else {
-						let url = '';
-
 						try {
-							url = JSON.parse(message);
+							let config = JSON.parse(message);
+							this.feeds[args.name] = {url:config.url, name:args.name, cache:{}};
+
+							this.update();
 						}
 						catch(error) {
-							throw new Error(`Invalid URL "${message}".`);
+							throw new Error(`Invalid configuration "${message}".`);
 						}
 		
-						this.feeds[args.name] = {url:url, name:args.name, cache:{}};
-
-						this.update();
 	
 					}
 
