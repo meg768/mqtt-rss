@@ -20,7 +20,7 @@ class App {
 		yargs.option('username', {describe:'User name for MQTT broker', default:process.env.MQTT_USERNAME});
 		yargs.option('port',     {describe:'Port for MQTT', default:process.env.MQTT_PORT});
 		yargs.option('topic',    {describe:'MQTT root topic', default:process.env.MQTT_TOPIC});
-		yargs.option('debug',    {describe:'Debug mode', type:'boolean', default:false});
+		yargs.option('debug',    {describe:'Debug mode', type:'boolean', default:process.env.DEBUG === '1'});
 
 		yargs.help();
 		yargs.wrap(null);
@@ -30,10 +30,11 @@ class App {
 		});
 
 		this.argv   = yargs.argv;
-		this.debug  = this.argv.debug ? console.log : () => {};
+		this.log    = console.log;
+		this.debug  = this.argv.debug ? this.log : () => {};
 		this.config = {};
 		this.parser = new Parser();
-		this.feeds = {};
+		this.feeds  = {};
 
 	}
 
@@ -113,7 +114,7 @@ class App {
 			this.mqtt = MQTT.connect(argv.host, {username:argv.username, password:argv.password, port:argv.port});
 					
 			this.mqtt.on('connect', () => {
-				this.debug(`Connected to host ${argv.host}:${argv.port}.`);
+				this.log(`Connected to host ${argv.host}:${argv.port}.`);
 			});
 
 			this.mqtt.subscribe(`${this.argv.topic}/#`);
@@ -121,12 +122,13 @@ class App {
 			this.mqtt.on(`${this.argv.topic}/:name`, (topic, message, args) => {
 				try {
 					if (message == '') {
-						this.debug(`Removed topic ${topic}...`);
+						this.log(`Removed topic ${topic}...`);
 						delete this.feeds[args.name];
 					}
 					else {
 						try {
 							let config = JSON.parse(message);
+							this.log(`Added RSS feed ${args.name}:${JSON.stringify(config)}...`);
 							this.feeds[args.name] = {url:config.url, name:args.name, cache:{}};
 
 							this.update();
@@ -141,7 +143,7 @@ class App {
 	
 				}
 				catch(error) {
-					this.debug(error);
+					this.log(error);
 				}
 
 			});
