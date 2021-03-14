@@ -102,7 +102,7 @@ class App {
 	}
 
 	async loop() {
-		this.debug(`Updating...`);
+		this.log(`Updating RSS feeds...`);
 		await this.update();
 		setTimeout(this.loop.bind(this), 1000 * 60 * 5);
 	}
