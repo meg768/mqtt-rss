@@ -5,7 +5,7 @@ var Parser = require('rss-parser');
 var Events = require('events');
 
 require('dotenv').config();
-
+require('yow/prefixConsole')();
 
 class App {
 
@@ -35,18 +35,6 @@ class App {
 		this.parser = new Parser();
 		this.feeds = {};
 
-		/*
-        this.feeds = [
-            {url:'https://www.sydsvenskan.se/rss.xml?latest',                        name: 'SDS',            description:'Sydsvenska Dagbladet'},
-            {url:'https://digital.di.se/rss',                                        name: 'DI',             description:'Dagens Industri'},
-            //{url:'http://api.sr.se/api/rss/program/83?format=145',                   name: 'SR',             description:'Sveriges Radio'},
-            //{url:'http://feeds.bbci.co.uk/news/rss.xml',                             name: 'BBC',            description:'BBC'},
-            {url:'http://www.svd.se/?service=rss',                                   name: 'SvD',            description:'Svenska Dagbladet'},
-            {url:'https://feeds.expressen.se/nyheter',                               name: 'Expressen',      description:'Expressen'},
-            //{url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',           name: 'New York Times', description:'New York Times'}
-           // {url:'https://rss.aftonbladet.se/rss2/small/pages/sections/aftonbladet', name: 'Aftonbladet',    description:'Aftonbladet'}
-        ];
-		*/	
 	}
 
 
@@ -120,7 +108,6 @@ class App {
 
 	async run() {
 		try {
-
 			var argv = this.argv;
 
 			this.mqtt = MQTT.connect(argv.host, {username:argv.username, password:argv.password, port:argv.port});
