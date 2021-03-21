@@ -41,34 +41,23 @@ class App {
 
     async fetch(feed) {
 
-        return new Promise((resolve, reject) => {
+		this.debug(`Fetching ${feed.url}...`);
 
-            this.parser.parseURL(feed.url).then((result) => {
-				this.debug(`Fetched ${feed.url}.`);
+		var result = await this.parser.parseURL(feed.url);
+		var lastItem = {};
 
-				var lastItem = {};
+		result.items.forEach((item) => {
+			let timestamp = new Date(item.isoDate);
 
-                result.items.forEach((item) => {
-					let timestamp = new Date(item.isoDate);
+			if (lastItem.timestamp == undefined || (lastItem.timestamp.getTime() < timestamp.getTime())) {
+				lastItem = {key:`${item.isoDate}:${item.title}`, timestamp:timestamp, item:item};
+			}
+		});
 
-					if (lastItem.timestamp == undefined || (lastItem.timestamp.getTime() < timestamp.getTime())) {
-						lastItem = {key:`${item.isoDate}:${item.title}`, timestamp:timestamp, item:item};
-					}
-                });
-
-				if (feed.cache.key == undefined || feed.cache.key != lastItem.key) {
-					this.debug(lastItem);
-					feed.cache = lastItem;
-					resolve(lastItem);
-				}
-				else
-					resolve();
-            })
-            .catch((error) => {
-                reject(error);
-
-            })
-        });
+		if (feed.cache.key == undefined || feed.cache.key != lastItem.key) {
+			this.debug(lastItem);
+			return feed.cache = lastItem;
+		}
     }
 
 	publish(topic, value) {
