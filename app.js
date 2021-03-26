@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-var MQTT = require('mqtt-ex');
+var MQTT   = require('mqtt-ex');
 var Parser = require('rss-parser');
 var Events = require('events');
+var Timer  = require('yow/timer');
 
 require('dotenv').config();
 require('yow/prefixConsole')();
@@ -29,36 +30,130 @@ class App {
 			return true;
 		});
 
-		this.argv   = yargs.argv;
-		this.log    = console.log;
-		this.debug  = this.argv.debug ? this.log : () => {};
-		this.config = {};
-		this.parser = new Parser();
-		this.feeds  = {};
+		this.argv    = yargs.argv;
+		this.log     = console.log;
+		this.debug   = this.argv.debug ? this.log : () => {};
+		this.parser  = new Parser();
+		this.entries = {};
+		this.cache   = {};
+		this.timer   = new Timer();
 
 	}
 
 
-    async fetch(feed) {
+    async fetchURL(url) {
 
-		this.debug(`Fetching ${feed.url}...`);
+		this.debug(`Fetching ${url}...`);
 
-		var result = await this.parser.parseURL(feed.url);
-		var lastItem = {};
+		var result = await this.parser.parseURL(url);
+		var lastItem = undefined;
 
 		result.items.forEach((item) => {
-			let timestamp = new Date(item.isoDate);
 
-			if (lastItem.timestamp == undefined || (lastItem.timestamp.getTime() < timestamp.getTime())) {
-				lastItem = {key:`${item.isoDate}:${item.title}`, timestamp:timestamp, item:item};
+			if (lastItem == undefined) {
+				lastItem = item;
+			}
+			else {
+				let itemTimestamp = new Date(item.isoDate);
+				let lastTimeStamp = new Date(lastItem.isoDate);
+	
+				if (lastTimeStamp.getTime() < itemTimestamp.getTime()) {
+					lastItem = item;
+				}
+
 			}
 		});
 
-		if (feed.cache.key == undefined || feed.cache.key != lastItem.key) {
-			this.debug(lastItem);
-			return feed.cache = lastItem;
-		}
+		let title = lastItem.title;
+		let link = lastItem.link;
+		let content = lastItem.contentSnippet;
+		let date = lastItem.isoDate;
+
+		let feed = {title:title, content:content, link:link, date:date};
+
+		this.debug(`Fetched ${url} - ${JSON.stringify(feed.title)}`);
+		return feed;
     }
+
+
+	async fetch() {
+/*
+		for (const [url, name] of Object.entries(this.entries)) {
+			this.cache[url] = await this.fetchURL(url);
+
+		}
+		return;
+*/
+/*
+		let promises = [];
+
+		Object.keys(this.entries).forEach(async (name) => {
+			let entry = this.entries[name];
+			promises.push(this.fetchURL(entry.url));
+		});
+
+		await Promise.all(promises);
+		return;
+*/
+		return new Promise((resolve, reject) => {
+			let promise = Promise.resolve();
+
+			Object.keys(this.entries).forEach((name) => {
+				let entry = this.entries[name];
+	
+				promise = promise.then(() => {
+					return this.fetchURL(entry.url);
+				})
+				.then((feed) => {
+					this.cache[entry.url] = feed;
+				});
+			});
+	
+			promise.then(() => {
+				resolve();
+			})
+	
+		});
+
+		
+		Object.keys(this.entries).forEach(async (name) => {
+			let entry = this.entries[name];
+			this.cache[entry.url] = await this.fetchURL(entry.url);
+		});
+	}
+
+
+	async update() {
+		this.debug(`Updating...`);
+
+		Object.keys(this.entries).forEach((name) => {
+			let entry = this.entries[name];
+			let cache = this.cache[entry.url];
+
+			if (cache != undefined) {
+				if (entry.cache == undefined || JSON.stringify(entry.cache) != JSON.stringify(cache)) {
+
+					this.debug(`Feed ${entry.url} changed.`);
+					this.debug(JSON.stringify(entry.url));
+					this.debug(JSON.stringify(cache.url));
+
+					Object.keys(cache).forEach((key) => {
+						this.publish(`${this.argv.topic}/${name}/${key}`, cache[key]);
+					});
+
+					entry.cache = cache;
+				}
+				else {
+					this.debug(`No change for url ${entry.url}.`);
+				}
+			}
+			else {
+				this.debug(`No cache for RSS feed ${entry.url}...`);
+			}
+		});		
+
+		  		
+	}
 
 	publish(topic, value) {
 		value = JSON.stringify(value);
@@ -66,34 +161,12 @@ class App {
 		this.mqtt.publish(topic, value, {retain:true});
 	}
 
-	async update() {
-		for (const [name, feed] of Object.entries(this.feeds)) {
-			let result = await this.fetch(feed);
-
-			if (result) {
-				let title = result.item.title;
-				let link = result.item.link;
-				let content = result.item.contentSnippet;
-				let date = result.item.isoDate;
-
-				if (content == undefined)
-					content = result.item['content:encodedSnippet'];
-
-				this.publish(`${this.argv.topic}/${name}/title`, title);
-				this.publish(`${this.argv.topic}/${name}/link`, link);
-				this.publish(`${this.argv.topic}/${name}/content`, content);
-				this.publish(`${this.argv.topic}/${name}/date`, date);
-	
-			}
-		  }
-		  
-
-	}
 
 	async loop() {
 		this.log(`Updating RSS feeds...`);
+		await this.fetch();
 		await this.update();
-		setTimeout(this.loop.bind(this), 1000 * 60 * 5);
+		setTimeout(this.loop.bind(this), 1000 * 60 * 15);
 	}
 
 	async run() {
@@ -104,6 +177,8 @@ class App {
 					
 			this.mqtt.on('connect', () => {
 				this.log(`Connected to host ${argv.host}:${argv.port}.`);
+
+				
 			});
 
 			this.mqtt.subscribe(`${this.argv.topic}/#`);
@@ -112,21 +187,22 @@ class App {
 				try {
 					if (message == '') {
 						this.log(`Removed topic ${topic}...`);
-						delete this.feeds[args.name];
+						delete this.entries[args.name];
 					}
 					else {
 						try {
 							let config = JSON.parse(message);
 							this.log(`Added RSS feed ${args.name}:${JSON.stringify(config)}...`);
-							this.feeds[args.name] = {url:config.url, name:args.name, cache:{}};
+							this.entries[args.name] = {url:config.url, name:args.name};
 
-							this.update();
+							this.timer.setTimer(2000, async () => {
+								await this.fetch();
+								await this.update();
+							});
 						}
 						catch(error) {
 							throw new Error(`Invalid configuration "${message}".`);
 						}
-		
-	
 					}
 
 	
@@ -138,7 +214,7 @@ class App {
 			});
 
 			this.loop();
-			
+
 		}
 		catch(error) {
 			console.error(error.stack);
