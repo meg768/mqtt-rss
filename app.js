@@ -69,7 +69,7 @@ class App {
 		let content = lastItem.contentSnippet;
 		let date = lastItem.isoDate;
 
-		return {title:title, content:content, link:link, date:date};
+		return {reply:lastItem, title:title, content:content, link:link, date:date};
     }
 
 
@@ -86,7 +86,7 @@ class App {
 					if (entry.feed == undefined || JSON.stringify(entry.feed) != JSON.stringify(feed)) {
 		
 						this.debug(`Feed ${name} changed.`);
-						this.publish(`${this.argv.topic}/reply`, feed);
+						this.publish(`${this.argv.topic}/reply`, feed.reply);
 		
 						Object.keys(feed).forEach((key) => {
 							this.publish(`${this.argv.topic}/${name}/${key}`, feed[key]);
