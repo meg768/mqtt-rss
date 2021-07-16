@@ -79,17 +79,24 @@ class App {
 			this.debug(`Fetching RSS feeds...`);
 
 			for (const [name, entry] of Object.entries(this.entries)) {
-				let feed = await this.fetchURL(entry.url);
+
+				try {
+					let feed = await this.fetchURL(entry.url);
 	
-				if (entry.feed == undefined || JSON.stringify(entry.feed) != JSON.stringify(feed)) {
+					if (entry.feed == undefined || JSON.stringify(entry.feed) != JSON.stringify(feed)) {
+		
+						this.debug(`Feed ${name} changed.`);
+		
+						Object.keys(feed).forEach((key) => {
+							this.publish(`${this.argv.topic}/${name}/${key}`, feed[key]);
+						});
+		
+						entry.feed = feed;
+					}
 	
-					this.debug(`Feed ${name} changed.`);
-	
-					Object.keys(feed).forEach((key) => {
-						this.publish(`${this.argv.topic}/${name}/${key}`, feed[key]);
-					});
-	
-					entry.feed = feed;
+				}
+				catch(error) {
+					this.log(error);
 				}
 	
 			}
