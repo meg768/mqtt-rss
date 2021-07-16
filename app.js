@@ -87,10 +87,10 @@ class App {
 		
 						this.debug(`Feed ${name} changed.`);
 						this.publish(`${this.argv.topic}/reply`, feed.reply);
-						this.publish(`${this.argv.topic}/timestamp`, new Date());
+						this.publish(`${this.argv.topic}/timestamp`, feed.date);
 		
 						Object.keys(feed).forEach((key) => {
-							this.publish(`${this.argv.topic}/${name}/${key}`, feed[key]);
+							//this.publish(`${this.argv.topic}/${name}/${key}`, feed[key]);
 						});
 		
 						entry.feed = feed;
