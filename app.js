@@ -64,6 +64,8 @@ class App {
 			}
 		});
 
+		return lastItem;
+
 		let title = lastItem.title;
 		let link = lastItem.link;
 		let content = lastItem.contentSnippet;
@@ -86,8 +88,8 @@ class App {
 					if (entry.feed == undefined || JSON.stringify(entry.feed) != JSON.stringify(feed)) {
 		
 						this.debug(`Feed ${name} changed.`);
-						this.publish(`${this.argv.topic}/${name}/reply`, feed.reply);
-						this.publish(`${this.argv.topic}/${name}/timestamp`, feed.date);
+						this.publish(`${this.argv.topic}/${name}/json`, feed);
+						//this.publish(`${this.argv.topic}/${name}/timestamp`, feed.date);
 		
 						Object.keys(feed).forEach((key) => {
 							this.publish(`${this.argv.topic}/${name}/${key}`, feed[key]);
