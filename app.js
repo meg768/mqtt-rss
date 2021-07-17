@@ -52,7 +52,7 @@ class App {
 			let timeA = new Date(A.isoDate);
 			let timeB = new Date(B.isoDate);
 
-			return timeA.getTime() - timeB.getTime();
+			return timeB.getTime() - timeA.getTime();
 
 		});
 
