@@ -48,6 +48,8 @@ class App {
 		var result = await this.parser.parseURL(url);
 		var lastItem = undefined;
 
+		this.debug(JSON.stringify(result));
+		
 		result.items.forEach((item) => {
 
 			if (lastItem == undefined) {
@@ -71,7 +73,6 @@ class App {
 
 		return {title:title, content:content, link:link, date:date};
     }
-
 
 	async fetch() {
 
