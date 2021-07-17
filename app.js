@@ -56,8 +56,11 @@ class App {
 
 		});
 
-		this.debug(result);
+		let lastItem = result.items[0];
 
+		this.debug(lastItem);
+
+/*
 		result.items.forEach((item) => {
 
 			if (lastItem == undefined) {
@@ -73,7 +76,7 @@ class App {
 
 			}
 		});
-
+*/
 		let title = lastItem.title;
 		let link = lastItem.link;
 		let content = lastItem.contentSnippet;
