@@ -45,8 +45,7 @@ class App {
 
 		this.debug(`Fetching ${url}...`);
 
-		var result = await this.parser.parseURL(url);
-		var lastItem = undefined;
+		let result = await this.parser.parseURL(url);
 
 		result.items.sort((A, B) => {
 			let timeA = new Date(A.isoDate);
@@ -57,6 +56,10 @@ class App {
 		});
 
 		let lastItem = result.items[0];
+		let title = lastItem.title;
+		let link = lastItem.link;
+		let content = lastItem.contentSnippet;
+		let date = lastItem.isoDate;
 
 		this.debug(lastItem);
 
@@ -77,10 +80,6 @@ class App {
 			}
 		});
 */
-		let title = lastItem.title;
-		let link = lastItem.link;
-		let content = lastItem.contentSnippet;
-		let date = lastItem.isoDate;
 
 		return {title:title, content:content, link:link, date:date};
     }
