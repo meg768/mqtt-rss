@@ -48,6 +48,14 @@ class App {
 		var result = await this.parser.parseURL(url);
 		var lastItem = undefined;
 
+		result.sort((A, B) => {
+			let timeA = new Date(A.isoDate);
+			let timeB = new Date(B.isoDate);
+
+			return timeA.getTime() - timeB.getTime();
+
+		});
+		
 		this.debug(result);
 
 		result.items.forEach((item) => {
