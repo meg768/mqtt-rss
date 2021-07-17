@@ -90,7 +90,7 @@ class App {
 						this.publish(`${this.argv.topic}/${name}/timestamp`, feed.date);
 		
 						Object.keys(feed).forEach((key) => {
-							//this.publish(`${this.argv.topic}/${name}/${key}`, feed[key]);
+							this.publish(`${this.argv.topic}/${name}/${key}`, feed[key]);
 						});
 		
 						entry.feed = feed;
