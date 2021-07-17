@@ -64,14 +64,12 @@ class App {
 			}
 		});
 
-		return lastItem;
-
 		let title = lastItem.title;
 		let link = lastItem.link;
 		let content = lastItem.contentSnippet;
 		let date = lastItem.isoDate;
 
-		return {reply:lastItem, title:title, content:content, link:link, date:date};
+		return {title:title, content:content, link:link, date:date};
     }
 
 
