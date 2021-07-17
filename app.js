@@ -48,8 +48,8 @@ class App {
 		var result = await this.parser.parseURL(url);
 		var lastItem = undefined;
 
-		this.debug(JSON.stringify(result));
-		
+		this.debug(result);
+
 		result.items.forEach((item) => {
 
 			if (lastItem == undefined) {
