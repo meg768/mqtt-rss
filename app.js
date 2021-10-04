@@ -63,24 +63,6 @@ class App {
 
 		this.debug(lastItem);
 
-/*
-		result.items.forEach((item) => {
-
-			if (lastItem == undefined) {
-				lastItem = item;
-			}
-			else {
-				let itemTimestamp = new Date(item.isoDate);
-				let lastTimeStamp = new Date(lastItem.isoDate);
-	
-				if (lastTimeStamp.getTime() < itemTimestamp.getTime()) {
-					lastItem = item;
-				}
-
-			}
-		});
-*/
-
 		return {title:title, content:content, link:link, date:date};
     }
 
