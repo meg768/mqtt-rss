@@ -8,10 +8,12 @@ var Timer  = require('yow/timer');
 require('dotenv').config();
 require('yow/prefixConsole')();
 
+
 class App {
 
 	constructor() {
 		var yargs = require('yargs');
+
 
 		yargs.usage('Usage: $0 [options]')
 
@@ -31,13 +33,17 @@ class App {
 			return true;
 		});
 
+		this.config  = require('yow/config')('.config');
 		this.argv    = yargs.argv;
 		this.log     = console.log;
 		this.debug   = this.argv.debug ? this.log : () => {};
 		this.parser  = new Parser();
-		this.entries = {};
+		this.feeds   = this.config.feeds;
+		this.cache   = {};
 		this.timer   = new Timer();
 
+
+	
 	}
 
 
@@ -61,41 +67,42 @@ class App {
 		let content = lastItem.contentSnippet;
 		let date = lastItem.isoDate;
 
-		this.debug(lastItem);
 
-		return {title:title, content:content, link:link, date:date};
+		return {date:date, title:title, content:content, link:link};
     }
 
 	async fetch() {
 
 		try {
-			this.debug(`Fetching RSS feeds...`);
+			let headlines = [];
 
-			for (const [name, entry] of Object.entries(this.entries)) {
+			for (const [name, url] of Object.entries(this.config.feeds)) {
 
 				try {
-					let feed = await this.fetchURL(entry.url);
-	
-					if (entry.feed == undefined || JSON.stringify(entry.feed) != JSON.stringify(feed)) {
-		
-						this.debug(`Feed ${name} changed.`);
-						this.publish(`${this.argv.topic}/${name}/json`, feed);
-						//this.publish(`${this.argv.topic}/${name}/timestamp`, feed.date);
-		
-						Object.keys(feed).forEach((key) => {
-							this.publish(`${this.argv.topic}/${name}/${key}`, feed[key]);
-						});
-		
-						entry.feed = feed;
+					let rss = await this.fetchURL(url);
+					let cache = this.cache[name];
+
+					if (cache == undefined || cache.date < rss.date) {
+						headlines.push({name:name, rss:rss});
+						this.cache[name] = rss;
 					}
-	
 				}
 				catch(error) {
 					this.log(error);
 				}
-	
+
 			}
-	
+
+			// Sort the headlines according to date
+			headlines.sort((a, b) => {
+				return a.rss.date.valueOf() - b.rss.date.valueOf();
+			});
+			
+			for (let headline of headlines) {
+				this.publish(`${this.config.topic}/${headline.name}`, headline.rss);
+
+			}
+
 		}
 		catch(error) {
 			this.log(error);
@@ -121,7 +128,7 @@ class App {
 			this.log(error);
 		}
 		finally {
-			setTimeout(this.loop.bind(this), 1000 * 60 * this.argv.interval);
+			setTimeout(this.loop.bind(this), 1000 * 60);
 		}
 	}
 
@@ -129,14 +136,15 @@ class App {
 		try {
 			var argv = this.argv;
 
-			this.mqtt = MQTT.connect(argv.host, {username:argv.username, password:argv.password, port:argv.port});
+			this.mqtt = MQTT.connect(this.config.host, {username:this.config.username, password:this.config.password, port:this.config.port});
 					
 			this.mqtt.on('connect', () => {
-				this.log(`Connected to host ${argv.host}:${argv.port}.`);
+				this.log(`Connected to host ${this.config.host}:${this.config.port}.`);
 
 				
 			});
 
+			/*
 			this.mqtt.subscribe(`${this.argv.topic}/#`);
 
 			this.mqtt.on(`${this.argv.topic}/:name`, (topic, message, args) => {
@@ -167,6 +175,7 @@ class App {
 				}
 
 			});
+			*/
 
 			this.loop();
 
