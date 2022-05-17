@@ -117,7 +117,7 @@ class App {
 			this.log(error);
 		}
 		finally {
-			setTimeout(this.loop.bind(this), 1000 * 60);
+			setTimeout(this.loop.bind(this), this.config.interval * 1000 * 60);
 		}
 	}
 
