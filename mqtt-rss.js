@@ -18,7 +18,7 @@ class App {
 
 		yargs.option('help',     {alias:'h', describe:'Displays this information'});
 		yargs.option('config',   {describe:'Specifies JSON config file', default:'.config'});
-		yargs.option('debug',    {describe:'Debug mode', default:true});
+		yargs.option('debug',    {describe:'Debug mode', default:false});
 
 		yargs.help();
 		yargs.wrap(null);
@@ -30,7 +30,7 @@ class App {
 		this.argv    = yargs.argv;
 		this.config  = require('yow/config')(this.argv.config);
 		this.log     = console.log;
-		this.debug   = this.argv.debug ? this.log : () => {};
+		this.debug   = this.argv.debug || this.config.debug ? this.log : () => {};
 		this.cache   = {};
 	}
 
