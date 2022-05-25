@@ -18,7 +18,7 @@ class App {
 
 		yargs.option('help',     {alias:'h', describe:'Displays this information'});
 		yargs.option('config',   {describe:'Specifies JSON config file', default:'.config'});
-		yargs.option('debug',    {describe:'Debug mode', default:false});
+		yargs.option('debug',    {describe:'Debug mode', type:'boolean', default:false});
 
 		yargs.help();
 		yargs.wrap(null);
