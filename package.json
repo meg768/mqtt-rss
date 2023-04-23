@@ -1,6 +1,6 @@
 {
   "name": "mqtt-rss",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "mqtt-rss",
   "main": "mqtt-rss.js",
   "scripts": {
@@ -19,7 +19,6 @@
   },
   "homepage": "https://github.com/meg768/mqtt-rss#readme",
   "dependencies": {
-    "dotenv": "^8.2.0",
     "mqtt": "^4.3.7",
     "rss-parser": "^3.12.0",
     "yargs": "^16.2.0",

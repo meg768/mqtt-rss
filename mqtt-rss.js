@@ -2,10 +2,7 @@
 
 var MQTT   = require('mqtt');
 var Parser = require('rss-parser');
-var Events = require('events');
-var Timer  = require('yow/timer');
 
-require('dotenv').config();
 require('yow/prefixConsole')();
 
 
@@ -17,8 +14,8 @@ class App {
 		yargs.usage('Usage: $0 [options]')
 
 		yargs.option('help',     {alias:'h', describe:'Displays this information'});
-		yargs.option('config',   {describe:'Specifies JSON config file', default:'.config'});
-		yargs.option('debug',    {describe:'Debug mode', type:'boolean', default:false});
+		yargs.option('config',   {describe:'Specifies JSON config file', default:'./config.json'});
+		yargs.option('debug',    {describe:'Debug mode', type:'boolean', default:true});
 
 		yargs.help();
 		yargs.wrap(null);
@@ -28,7 +25,7 @@ class App {
 		});
 
 		this.argv    = yargs.argv;
-		this.config  = require('yow/config')(this.argv.config);
+		this.config  = require(this.argv.config);
 		this.log     = console.log;
 		this.debug   = this.argv.debug || this.config.debug ? this.log : () => {};
 		this.cache   = {};
@@ -50,14 +47,14 @@ class App {
 
 		});
 
+        let name = result.title;
 		let lastItem = result.items[0];
 		let title = lastItem.title;
 		let link = lastItem.link;
-		let content = lastItem.contentSnippet;
 		let date = lastItem.isoDate;
 
 
-		return {date:date, title:title, content:content, link:link};
+		return {name:name, date:date, title:title, link:link};
     }
 
 	async fetch() {
@@ -65,9 +62,9 @@ class App {
 		try {
 			let headlines = [];
 
-			for (const [name, url] of Object.entries(this.config.feeds)) {
+			for (let [name, url] of Object.entries(this.config.feeds)) {
 
-				try {
+                try {
 					let rss = await this.fetchURL(url);
 					let cache = this.cache[name];
 
