@@ -20,6 +20,7 @@
   "homepage": "https://github.com/meg768/mqtt-rss#readme",
   "dependencies": {
     "mqtt": "^4.3.7",
+    "mqtt-cache": "^1.0.0",
     "rss-parser": "^3.12.0",
     "yargs": "^16.2.0",
     "yow": "^1.0.114"

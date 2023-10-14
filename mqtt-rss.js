@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-var MQTT   = require('mqtt');
 var Parser = require('rss-parser');
 
 require('yow/prefixConsole')();
+
 
 
 class App {
@@ -68,7 +68,7 @@ class App {
 					let rss = await this.fetchURL(url);
 					let cache = this.cache[name];
 
-					if (cache == undefined || cache.date < rss.date) {
+					if (true || cache == undefined || cache.date < rss.date) {
 						headlines.push({name:name, rss:rss});
 						this.cache[name] = rss;
 					}
@@ -101,7 +101,6 @@ class App {
 
 	publish(topic, value) {
 		value = JSON.stringify(value);
-		this.debug(`Publishing ${topic}:${value}`);
 		this.mqtt.publish(topic, value, {retain:true});
 	}
 
@@ -120,9 +119,10 @@ class App {
 
 	async run() {
 		try {
-			var argv = this.argv;
+            let Mqtt = require('mqtt');
+			let MqttCache = require('mqtt-cache');
 
-			this.mqtt = MQTT.connect(this.config.host, {username:this.config.username, password:this.config.password, port:this.config.port});
+			this.mqtt = MqttCache(Mqtt.connect(this.config.host, {username:this.config.username, password:this.config.password, port:this.config.port}));
 					
 			this.mqtt.on('connect', () => {
 				this.debug(`Connected to host ${this.config.host}:${this.config.port}.`);
